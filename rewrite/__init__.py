@@ -1,1 +1,1 @@
-from segment import segment
+from .segment import segment
