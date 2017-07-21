@@ -1,0 +1,13 @@
+----segment start-----
+<_ast.Tuple object at 0x1042cf1d0>
+----segment end-----
+----segment start-----
+<_ast.Assign object at 0x1042b1f60>
+<_ast.Assign object at 0x1042ce278>
+<_ast.Assign object at 0x1042ce5c0>
+----segment end-----
+----segment start-----
+<_ast.Assign object at 0x1042ce9e8>
+<_ast.Assign object at 0x1042ced68>
+<_ast.Assign object at 0x1042cef60>
+----segment end-----
