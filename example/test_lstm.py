@@ -55,6 +55,7 @@ b = nd.zeros(shape=(10, ))
 N = 128
 X = gaussian(shape=(N, 784 // 7, 7))
 
+
 def foo(h, c, patch, Wxi, Wxf, Wxo, Wxg, bxi, bxf, bxo, bxg, Whi, Whf, Who,
         Whg, bhi, bhf, bho, bhg):
     i = sigmoid(linear(patch, Wxi, bxi) + linear(h, Whi, bhi))
@@ -64,6 +65,7 @@ def foo(h, c, patch, Wxi, Wxf, Wxo, Wxg, bxi, bxf, bxo, bxg, Whi, Whf, Who,
     c = f * c + i * g
     h = o * mx.nd.tanh(c)
     return h, c, linear(h, W, b)
+
 
 foo = segment(foo, globals(), True)
 

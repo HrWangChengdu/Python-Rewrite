@@ -2,6 +2,7 @@ from __future__ import print_function
 import ast
 import inspect
 
+
 def segment(f, module_namespace, visualize_mode=False):
     def always_true(x):
         return True
@@ -29,7 +30,7 @@ def do_segment(node, is_ndarray_type, is_atomic_func, visualize_mode):
 
     is_atomic_func: the func to check the existence of @atom
 
-    # Puzzles:whether we need to record the function type? 
+    # Puzzles:whether we need to record the function type?
         - it depends on whether @Jit/Atomic decorator is removed in the annotation stage.
 
     # Potential missing Input: variable liveness, i.e. whether one variable is accessed in the future or not
@@ -52,44 +53,51 @@ def do_segment(node, is_ndarray_type, is_atomic_func, visualize_mode):
             ast.With, ast.AsyncWith, ast.Raise, ast.Try, ast.Assert, ast.Import, ast.ImportFrom,
             # More Special Ops
             ast.Global, ast.Nonlocal, ast.Expr, ast.Pass, ast.Break, ast.Continue, ast.Str
-            )
-    
+        )
+
         func_checking_list = (ast.Call)
-    
+
         # Check its or the computed result's type
-        type_checking_list = (ast.Name, ast.BinOp, ast.UnaryOp,  ast.Compare, ast.BoolOp, ast.Attribute, ast.Subscript)
-    
+        type_checking_list = (
+            ast.Name,
+            ast.BinOp,
+            ast.UnaryOp,
+            ast.Compare,
+            ast.BoolOp,
+            ast.Attribute,
+            ast.Subscript)
+
         # Types that are not doing any checking:
         non_check_list = (
             # Assignment
             ast.Assign, ast.AugAssign,
             # Basic Data Structure
-            ast.List, ast.Tuple,  ast.Dict, ast.Set, ast.Num,
+            ast.List, ast.Tuple, ast.Dict, ast.Set, ast.Num,
             # Context Related Function
             ast.Load, ast.Store,
             # Operators that are covered by BinOp and UnaryOp
             ast.operator, ast.boolop, ast.unaryop, ast.cmpop,
             # arg
             ast.arg
-            )
-    
+        )
+
         skip_fuse_list = (ast.arg, ast.Name)
-    
+
         @staticmethod
-        def fuse_check(node): 
+        def fuse_check(node):
             # TODO: rewrite this one
             if isinstance(node, AstTypeHelper.seg_list):
                 return False
-    
+
             if isinstance(node, AstTypeHelper.func_checking_list):
                 return is_atomic_func(node)
-    
+
             if isinstance(node, AstTypeHelper.type_checking_list):
                 return is_ndarray_type(node)
-    
+
             if isinstance(node, AstTypeHelper.non_check_list):
                 return True
-    
+
             raise UnexpectedNodeType(type(node))
 
     def fuse(node):
@@ -161,31 +169,32 @@ def do_segment(node, is_ndarray_type, is_atomic_func, visualize_mode):
                 for i, e in enumerate(value):
                     if (isinstance(e, ast.AST)):
                         atom_signs[name].append(iterate_and_fuse(e))
-                        all_atom &= atom_signs[name][i] 
+                        all_atom &= atom_signs[name][i]
 
         all_atom &= AstTypeHelper.fuse_check(node)
 
-        # If all child nodes are atomic and the operation itself is good, then leave it to its parent
+        # If all child nodes are atomic and the operation itself is good, then
+        # leave it to its parent
         if all_atom:
             return True
 
         # Rule 1: fuse consecutive atomic asssign statements in the body
-        if hasattr(node, 'body'): 
+        if hasattr(node, 'body'):
             values = node.body
             signs = atom_signs['body']
             removed_num = 0
             for (st, leng) in get_consec_assign(values, signs):
                 if not visualize_mode:
                     st -= removed_num
-                    values[st] = fuse(values[st:st+leng])
+                    values[st] = fuse(values[st:st + leng])
                     # Already being fused
                     signs[st] = False
                     removed_num += leng - 1
-                    del values[st+1:st+leng-1]
-                    del signs[st+1:st+leng-1]    
+                    del values[st + 1:st + leng - 1]
+                    del signs[st + 1:st + leng - 1]
                 else:
-                    fuse(values[st:st+leng])
-                    for i in range(st, st+leng):
+                    fuse(values[st:st + leng])
+                    for i in range(st, st + leng):
                         signs[i] = False
 
         for name, value in ast.iter_fields(node):
