@@ -7,7 +7,7 @@ import mxnet as mx
 import mxnet.ndarray as nd
 sys.path.append('../')
 from rewrite import test_segment, atomic
-import inspect
+
 
 context = mx.cpu()
 
