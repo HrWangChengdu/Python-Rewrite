@@ -7,16 +7,39 @@ from .common import UnexpectedNodeType
 from .infer import infer_inputs_and_outputs_given_nodes
 from .decorator import atomic
 
-
-def segment(f, visualize_mode=False):
+def segment(node, global_namespace, visualize_mode=False):
     """Given an annotated AST, return a segmented AST
+
+    This is the only interface to call after type annotation.
+    Parameters
+    ----------
+    node: annotated AST node
+
+    global_namespace: globa NameSpace of the function
+
+    visualize_mode: print the segments if True
+
+
+    Returns
+    -------
+    ast: segmented AST
+
     """
     def is_ndarray_type(x):
         return x.type == nd.NDArray
-    return do_segment(ast.parse(inspect.getsource(f)), f.__globals__, is_ndarray_type, visualize_mode)
+    return do_segment(node, global_namespace, is_ndarray_type, visualize_mode)
 
 def test_segment(f, visualize_mode=False):
     """The function to test segment implementation
+
+    The interface to test segment function without the annotation information
+    The input is the function object instead of parsed ast node.
+
+    Parameters
+    ----------
+    f: function to segment
+
+    visualize_mode: print the segments if True
     """
     def is_ndarray_type_fake(x):
         # The ast is not annotated with type attribute
@@ -53,8 +76,7 @@ def do_segment(node, global_namespace, is_ndarray_type, visualize_mode):
     """
 
     class AstTypeHelper:
-        """
-        """
+        """The helper class that categorizes the AST classes by purposes"""
         seg_list = (
             # Module, Function, Class Related
             ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda, ast.arguments, ast.ClassDef,
@@ -96,7 +118,6 @@ def do_segment(node, global_namespace, is_ndarray_type, visualize_mode):
 
         @staticmethod
         def fuse_check(node):
-            # TODO: rewrite this one
             if isinstance(node, AstTypeHelper.seg_list):
                 return False
 
@@ -140,8 +161,6 @@ def do_segment(node, global_namespace, is_ndarray_type, visualize_mode):
         Parameters
         ------
         node:  ast.Ast  | the list of ast.Ast
-
-        TODO: Need to infer the inputs and outputs of this node
 
         The expression could be re-writen to 'run_segment(inputs)'
         The assignment statement should kept its outputs  'outputs = run_segments(inputs)'

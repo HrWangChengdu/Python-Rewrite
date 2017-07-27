@@ -6,9 +6,16 @@ from functools import reduce
 
 
 def infer_inputs_and_outputs_given_nodes(nodes):
-    """Given a/a list of ast-node, output the input ids (names)
+    """Given a/a list of ast-node, infer the input and output variables
+    Parameters
+    ----------
+    nodes: a single node or a lsit of nodes
+
+    Returns
+    -------
+    ins: the input variable names
+    outs: the output variable names
     """
-    # TODO: A set to inst
     if isinstance(nodes, list):
         ins = []
         outs = []
@@ -24,8 +31,17 @@ def infer_inputs_and_outputs_given_nodes(nodes):
 
 
 def infer_inputs_and_outputs_given_node(node):
-    """
-        The node could only be assign-statement or expressions
+    """Given a ast-node, infer the input and output variables
+    The node should be either assign-statement or expression
+
+    Parameters
+    ----------
+    node: a single node
+
+    Returns
+    -------
+    ins: the input variable names
+    outs: the output variable names
     """
     if isinstance(node, ast.Assign):
         # get inputs from its value expression
@@ -40,7 +56,17 @@ def infer_inputs_and_outputs_given_node(node):
 
 
 def infer_inputs_given_exprs(expr):
-    """
+    """Given a ast-node, infer the input variables
+    As expression cannot define a new variable, output is not inferred
+
+    Parameters
+    ----------
+    expr: an expression
+
+    Returns
+    -------
+    ins: the input variable names
+
     TODO:
       - handle the slice object
       - need to know the actual type of the left operand of attribute
