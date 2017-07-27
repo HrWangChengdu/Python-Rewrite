@@ -1,6 +1,8 @@
 from __future__ import print_function
 import ast
 import inspect
+from .common import UnexpectedNodeType
+from .infer import infer_inputs_and_outputs_given_nodes
 
 
 def segment(f, module_namespace, visualize_mode=False):
@@ -36,10 +38,6 @@ def do_segment(node, is_ndarray_type, is_atomic_func, visualize_mode):
     # Potential missing Input: variable liveness, i.e. whether one variable is accessed in the future or not
         - Let's assume all the output variables are accessed, i.e. the worst case
     """
-
-    class UnexpectedNodeType(Exception):
-        """UnexpectedNodeType"""
-        pass
 
     class AstTypeHelper:
         """
@@ -100,6 +98,8 @@ def do_segment(node, is_ndarray_type, is_atomic_func, visualize_mode):
 
             raise UnexpectedNodeType(type(node))
 
+    segment_id = 0
+
     def fuse(node):
         """Fuse the node or the list of nodes
 
@@ -113,18 +113,23 @@ def do_segment(node, is_ndarray_type, is_atomic_func, visualize_mode):
         The assignment statement should kept its outputs  'outputs = run_segments(inputs)'
         """
 
+        nonlocal segment_id
         # Do nothing on unit op
         if (isinstance(node, AstTypeHelper.skip_fuse_list)):
             return node
 
         if (visualize_mode):
-            print('----segment start-----')
+            print('Segment {} info: '.format(segment_id))
+            segment_id += 1
+            ins, outs = infer_inputs_and_outputs_given_nodes(node)
+            print('\tinput list: ', ins)
+            print('\toutput list: ', outs)
             if isinstance(node, list):
-                for e in node:
-                    print(e)
+                for i, e in enumerate(node):
+                    print('\tast node {} '.format(i), e)
             else:
-                print(node)
-            print('----segment end-----')
+                print('\tast node 0 ', node)
+            print('\n')
 
         # TODO: Add aggregation code here
         return node
