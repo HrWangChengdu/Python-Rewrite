@@ -6,19 +6,21 @@ import functools
 import mxnet as mx
 import mxnet.ndarray as nd
 sys.path.append('../')
-from rewrite import segment
+from rewrite import test_segment, atomic
 
 context = mx.cpu()
 
-
+@atomic
 def linear(X, W, bias):
     return nd.dot(X, W) + bias
 
 
+@atomic
 def sigmoid(x):
     return .5 * (nd.tanh(.5 * x) + 1)
 
 
+@atomic
 def gaussian(shape):
     return nd.random_normal(shape=shape).as_in_context(context)
 
@@ -68,7 +70,7 @@ def foo(h, c, patch, Wxi, Wxf, Wxo, Wxg, bxi, bxf, bxo, bxg, Whi, Whf, Who,
     return h, c, linear(h, W, b)
 
 
-foo = segment(foo, globals(), True)
+foo = test_segment(foo, True)
 
 """
 for index in range(10):

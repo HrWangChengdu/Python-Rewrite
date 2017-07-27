@@ -1,18 +1,29 @@
 from __future__ import print_function
 import ast
+import types
 import inspect
 from .common import UnexpectedNodeType
 from .infer import infer_inputs_and_outputs_given_nodes
+from .decorator import atomic
 
 
-def segment(f, module_namespace, visualize_mode=False):
+def segment(f):
+    """Given an annotated AST, return a segmented AST
+    """
+    def always_true(x):
+        return True
+    return do_segment(ast.parse(inspect.getsource(f)), f.__globals__, always_true, visualize_mode)
+
+def test_segment(f, visualize_mode=False):
+    """The function to test segment implementation
+    """
     def always_true(x):
         return True
     node = ast.parse(inspect.getsource(f))
-    node = do_segment(node, always_true, always_true, visualize_mode)
+    node = do_segment(node, f.__globals__, always_true, visualize_mode)
     node.body[0].name += '_rewritten'
     func_name = node.body[0].name
-    global_namespace = module_namespace.copy()
+    global_namespace = f.__globals__.copy()
     exec(
         compile(node, filename='<ast>', mode='exec'), global_namespace)
 
@@ -21,16 +32,16 @@ def segment(f, module_namespace, visualize_mode=False):
     return wrapper
 
 
-def do_segment(node, is_ndarray_type, is_atomic_func, visualize_mode):
+def do_segment(node, global_namespace, is_ndarray_type, visualize_mode):
     """Segment a node given its information collected in the runtime
 
     Parameters
     ------
     node:  ast.Ast
 
-    is_ndarray_type: the func for checking the types for ast.Name, ast.Call return values
+    global_namespace: function's module namespace
 
-    is_atomic_func: the func to check the existence of @atom
+    is_ndarray_type: the func for checking the types for ast.Name, ast.Call return values
 
     # Puzzles:whether we need to record the function type?
         - it depends on whether @Jit/Atomic decorator is removed in the annotation stage.
@@ -97,6 +108,27 @@ def do_segment(node, is_ndarray_type, is_atomic_func, visualize_mode):
                 return True
 
             raise UnexpectedNodeType(type(node))
+
+    def is_atomic_func(node):
+        # TODO: add a cache here
+        if (isinstance(node.func, ast.Attribute)):
+            # return node.type == NDArray Type
+            return True
+
+        try:
+            f = global_namespace[node.func.id]
+            assert(isinstance(f, types.FunctionType))
+            func_def = ast.parse(inspect.getsource(f))
+            for e in func_def.body[0].decorator_list:
+                if (global_namespace[e.id] == atomic):
+                    return True
+        except Exception:
+            # f is a built-in func or f is not a funct
+            print('is_atomic_func fails', type(node))
+            return False
+        print('is_atomic_func fails', type(node))
+        return False
+
 
     segment_id = 0
 
@@ -176,7 +208,8 @@ def do_segment(node, is_ndarray_type, is_atomic_func, visualize_mode):
                         atom_signs[name].append(iterate_and_fuse(e))
                         all_atom &= atom_signs[name][i]
 
-        all_atom &= AstTypeHelper.fuse_check(node)
+        if (all_atom):
+            all_atom &= AstTypeHelper.fuse_check(node)
 
         # If all child nodes are atomic and the operation itself is good, then
         # leave it to its parent
