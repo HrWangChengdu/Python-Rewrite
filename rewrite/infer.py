@@ -1,7 +1,6 @@
 from __future__ import print_function
 import ast
 from collections import OrderedDict
-from .common import UnexpectedNodeType
 from functools import reduce
 
 
@@ -52,8 +51,7 @@ def infer_inputs_and_outputs_given_node(node):
     elif isinstance(node, ast.expr):
         return infer_inputs_given_exprs(node), []
     else:
-        raise UnexpectedNodeType(type(node))
-
+        raise TypeError('Type {} not handled yet in inputs and outputs inference'.format(type(node)))
 
 def infer_inputs_given_exprs(expr):
     """Given a ast-node, infer the input variables
@@ -96,4 +94,4 @@ def infer_inputs_given_exprs(expr):
     elif isinstance(expr, (ast.Num, ast.Str, ast.Bytes)):
         return []
 
-    raise UnexpectedNodeType(type(expr))
+    raise TypeError('{} not handled yet in inference of inputs'.format(type(expr)))

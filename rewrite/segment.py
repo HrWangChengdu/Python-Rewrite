@@ -3,7 +3,6 @@ import ast
 import types
 import inspect
 from mxnet import nd
-from .common import UnexpectedNodeType
 from .infer import infer_inputs_and_outputs_given_nodes
 from .decorator import atomic
 
@@ -130,7 +129,7 @@ def do_segment(node, global_namespace, is_ndarray_type, visualize_mode):
             if isinstance(node, AstTypeHelper.non_check_list):
                 return True
 
-            raise UnexpectedNodeType(type(node))
+            raise TypeError('Type {} not handled yet in fuse check'.format(type(node)))
 
     def is_atomic_func(node):
         # TODO: add a cache here
