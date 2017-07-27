@@ -2,25 +2,27 @@ from __future__ import print_function
 import ast
 import types
 import inspect
+from mxnet import nd
 from .common import UnexpectedNodeType
 from .infer import infer_inputs_and_outputs_given_nodes
 from .decorator import atomic
 
 
-def segment(f):
+def segment(f, visualize_mode=False):
     """Given an annotated AST, return a segmented AST
     """
-    def always_true(x):
-        return True
-    return do_segment(ast.parse(inspect.getsource(f)), f.__globals__, always_true, visualize_mode)
+    def is_ndarray_type(x):
+        return x.type == nd.NDArray
+    return do_segment(ast.parse(inspect.getsource(f)), f.__globals__, is_ndarray_type, visualize_mode)
 
 def test_segment(f, visualize_mode=False):
     """The function to test segment implementation
     """
-    def always_true(x):
+    def is_ndarray_type_fake(x):
+        # The ast is not annotated with type attribute
         return True
     node = ast.parse(inspect.getsource(f))
-    node = do_segment(node, f.__globals__, always_true, visualize_mode)
+    node = do_segment(node, f.__globals__, is_ndarray_type_fake, visualize_mode)
     node.body[0].name += '_rewritten'
     func_name = node.body[0].name
     global_namespace = f.__globals__.copy()
