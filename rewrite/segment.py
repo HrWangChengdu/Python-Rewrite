@@ -2,9 +2,16 @@ from __future__ import print_function
 import ast
 import types
 import inspect
+
 from mxnet import nd
+from functools import wraps
 from .infer import infer_inputs_and_outputs_given_nodes
-from .decorator import atomic
+
+def atomic(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        return wrapper
+    return wrapper
 
 def segment(node, global_namespace, visualize_mode=False):
     """Given an annotated AST, return a segmented AST
